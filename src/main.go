@@ -14,7 +14,7 @@ type student struct {
 
 }
 
-/**
+/*
 user type 
 */
 type user struct {
