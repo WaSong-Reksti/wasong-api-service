@@ -3,10 +3,8 @@ package models
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"cloud.google.com/go/firestore"
-	"github.com/gin-gonic/gin"
 	"google.golang.org/api/iterator"
 )
 
@@ -14,26 +12,55 @@ import (
 User Model
 */
 type User struct {
-	Username string `json: username`
-	Password string `json: password`
-	Email    string `json: email`
-	Type     string `json: type`
-	Name     string `json: name`
-	About    string `json: about`
+	Username string `firestore: "Name, omitempty"`
+	Password string `firestore: "Password, omitempty"`
+	Email    string `firestore: "Email, omitempty"`
+	Type     string `firestore: "Type, omitempty"`
+	Name     string `firestore: "Name, omitempty"`
+	About    string `firestore: "About, omitempty"`
 }
 
-func (u *User) createUser(c *gin.Context) {
-	var user User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func CreateUser(ctx context.Context, client *firestore.Client, user User) error {
+	_, _, err := client.Collection("User").Add(ctx, user)
+	if err != nil {
+		return fmt.Errorf("error: %v", err)
+	}
+	return err
+
+}
+
+func UpdateUserByID(ctx context.Context, client *firestore.Client, userID string, keyValue map[string]interface{}) (map[string]interface{}, error) {
+	updates := make([]firestore.Update, 0)
+
+	// Construct firestore.Update slice based on the keyValue map
+	for key, value := range keyValue {
+		updates = append(updates, firestore.Update{
+			Path:  key,
+			Value: value,
+		})
 	}
 
-	c.JSON(http.StatusCreated, user)
+	_, err := client.Collection("User").Doc(userID).Update(ctx, updates)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user: %v", err)
+	}
+
+	docSnapshot, err := client.Collection("User").Doc(userID).Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch updated user data: %v", err)
+	}
+
+	return docSnapshot.Data(), nil
+
 }
 
-func (u *User) updateUser(c *gin.Context) {
+func DeleteUserByID(ctx context.Context, firestoneClient *firestore.Client, userID string) (error){
+	_, err := firestoneClient.Collection("User").Doc(userID).Delete(ctx)
+	if err != nil{
+		return fmt.Errorf("failed to delete: %v", err)
+	}
 
+	return err
 }
 
 func GetUsersFromFirestore(ctx context.Context, firestoreClient *firestore.Client) ([]User, error) {
@@ -54,4 +81,19 @@ func GetUsersFromFirestore(ctx context.Context, firestoreClient *firestore.Clien
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func GetUserById(ctx context.Context, firestoreClient *firestore.Client, userID string) (*User, error) {
+	dsnap, err := firestoreClient.Collection("User").Doc(userID).Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user document: %v", err)
+	}
+
+	var user User
+	if err := dsnap.DataTo(&user); err != nil {
+		return nil, fmt.Errorf("failed to convert data to User struct: %v", err)
+	}
+
+	return &user, nil
+
 }
