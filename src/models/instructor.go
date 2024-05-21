@@ -1,9 +1,9 @@
 package models
 
 /*
-Student Model
+Instructor Model
 */
-type Student struct {
+type Instructor struct {
 	ID   string
 	User User
 }
