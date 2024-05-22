@@ -4,10 +4,10 @@ import (
 	// "errors"
 	"context"
 	"example/wasong-api-service/src/database"
-	models "example/wasong-api-service/src/models"
 	"example/wasong-api-service/src/routes"
 	"fmt"
 	"log"
+	"net"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,13 +15,6 @@ import (
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	myUser := models.User{
-		Username: "hakuna_matata",
-		Password: "123456",
-		Email:    "hakuna@example.com",
-		Type:     "student",
-	}
-	fmt.Println(myUser)
 	ctx := context.Background()
 	firestoreClient, err := database.InitializeFirestoreClient(&ctx)
 	if err != nil {
@@ -32,6 +25,29 @@ func main() {
 	defer firestoreClient.Close()
 
 	routes.InitializeUserRoutes(ctx, router, firestoreClient)
-	router.Run(":8080")
 
+	ip, err := getLocalIP()
+	if err != nil {
+		panic(err)
+	}
+
+	address := fmt.Sprintf("%s:8080", ip)
+	fmt.Println(address)
+	router.Run("localhost:8080")
+
+}
+
+func getLocalIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String(), nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no IP address found")
 }
