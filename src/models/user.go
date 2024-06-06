@@ -12,20 +12,22 @@ import (
 User Model
 */
 type User struct {
-	Username string `firestore: "Name, omitempty"`
-	Password string `firestore: "Password, omitempty"`
-	Email    string `firestore: "Email, omitempty"`
-	Type     string `firestore: "Type, omitempty"`
-	Name     string `firestore: "Name, omitempty"`
-	About    string `firestore: "About, omitempty"`
+	ID       string `firestore:"-"`
+	Username string `firestore:"Username,omitempty"`
+	Password string `firestore:"Password,omitempty"`
+	Email    string `firestore:"Email,omitempty"`
+	Type     string `firestore:"Type,omitempty"`
+	Name     string `firestore:"Name,omitempty"`
+	About    string `firestore:"About,omitempty"`
 }
 
-func CreateUser(ctx context.Context, client *firestore.Client, user User) error {
-	_, _, err := client.Collection("User").Add(ctx, user)
+func CreateUser(ctx context.Context, client *firestore.Client, user User) (string, *User, error) {
+	docRef, _, err := client.Collection("User").Add(ctx, user)
 	if err != nil {
-		return fmt.Errorf("error: %v", err)
+		return "", nil, fmt.Errorf("error: %v", err)
 	}
-	return err
+	createdUser := user
+	return docRef.ID, &createdUser, nil
 
 }
 
@@ -54,9 +56,9 @@ func UpdateUserByID(ctx context.Context, client *firestore.Client, userID string
 
 }
 
-func DeleteUserByID(ctx context.Context, firestoneClient *firestore.Client, userID string) (error){
+func DeleteUserByID(ctx context.Context, firestoneClient *firestore.Client, userID string) error {
 	_, err := firestoneClient.Collection("User").Doc(userID).Delete(ctx)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("failed to delete: %v", err)
 	}
 
@@ -96,4 +98,23 @@ func GetUserById(ctx context.Context, firestoreClient *firestore.Client, userID 
 
 	return &user, nil
 
+}
+
+func getUser(ctx context.Context, userRef *firestore.DocumentRef) (*User, error) {
+	// Fetch user document using the document reference
+	docSnapshot, err := userRef.Get(ctx)
+	if err != nil {
+		return &User{}, fmt.Errorf("failed to get user document: %v", err)
+	}
+
+	// Convert data to User struct
+	var user User
+	if err := docSnapshot.DataTo(&user); err != nil {
+		return &User{}, fmt.Errorf("failed to convert data to User struct: %v", err)
+	}
+
+	// Set the ID field of the user
+	user.ID = docSnapshot.Ref.ID
+
+	return &user, nil
 }

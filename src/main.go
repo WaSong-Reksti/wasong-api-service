@@ -25,15 +25,11 @@ func main() {
 	defer firestoreClient.Close()
 
 	routes.InitializeUserRoutes(ctx, router, firestoreClient)
+	routes.InitializeCourseRoutes(ctx, router, firestoreClient)
+	fmt.Println("Initialize courses route")
 
-	ip, err := getLocalIP()
-	if err != nil {
-		panic(err)
-	}
-
-	address := fmt.Sprintf("%s:8080", ip)
-	fmt.Println(address)
 	router.Run("localhost:8080")
+	fmt.Println("Sucessfully run on localhost:8080")
 
 }
 

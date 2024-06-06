@@ -5,6 +5,7 @@ package routes
 import (
 	"context"
 	"example/wasong-api-service/src/models"
+	"fmt"
 	"net/http"
 
 	"cloud.google.com/go/firestore"
@@ -61,4 +62,6 @@ func InitializeUserRoutes(ctx context.Context, r *gin.Engine, firestoreClient *f
 
 		c.JSON(http.StatusOK, "User "+userID+" deleted successfully")
 	})
+
+	fmt.Println("Initialize users route")
 }
