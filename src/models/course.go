@@ -18,6 +18,7 @@ type Course struct {
 	Instrument   string                 `firestore:"Instrument,omitempty"`
 	Instructor   *Instructor            `firestore:"-"`
 	InstructorID *firestore.DocumentRef `firestore:"InstructorID,omitempty"`
+	Assignments  []Assignment           `firestore:"-"`
 }
 
 func GetAllCourses(ctx context.Context, firestore *firestore.Client) ([]Course, error) {

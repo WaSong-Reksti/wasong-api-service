@@ -5,6 +5,7 @@ package routes
 import (
 	"context"
 	"example/wasong-api-service/src/models"
+	"fmt"
 	"net/http"
 
 	"cloud.google.com/go/firestore"
@@ -22,8 +23,8 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 		c.JSON(http.StatusOK, courses)
 	})
 
-	r.GET("api/courses/:id", func(c *gin.Context) {
-		courseID := c.Param("id")
+	r.GET("api/courses/:courseId", func(c *gin.Context) {
+		courseID := c.Param("courseId")
 		course, err := models.GetCoursesById(ctx, firestoreClient, courseID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -69,8 +70,8 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 		c.JSON(http.StatusCreated, gin.H{"id": createdCourseID, "course": createdCourse})
 	})
 
-	r.PATCH("/api/courses/:id", func(c *gin.Context) {
-		courseID := c.Param("id")
+	r.PATCH("/api/courses/:courseId", func(c *gin.Context) {
+		courseID := c.Param("courseId")
 
 		var updateData map[string]interface{}
 
@@ -88,8 +89,8 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 
 	})
 
-	r.DELETE("/api/courses/:id", func(c *gin.Context) {
-		courseID := c.Param("id")
+	r.DELETE("/api/courses/:courseId", func(c *gin.Context) {
+		courseID := c.Param("courseId")
 
 		if err := models.DeleteCourseByID(ctx, firestoreClient, courseID); err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -99,4 +100,5 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 		c.JSON(http.StatusOK, "Course "+courseID+" deleted successfully")
 	})
 
+	fmt.Println("Initialize courses route")
 }

@@ -26,7 +26,7 @@ func main() {
 
 	routes.InitializeUserRoutes(ctx, router, firestoreClient)
 	routes.InitializeCourseRoutes(ctx, router, firestoreClient)
-	fmt.Println("Initialize courses route")
+	routes.InitializeAssignmentsRoutes(ctx, router, firestoreClient)
 
 	router.Run("localhost:8080")
 	fmt.Println("Sucessfully run on localhost:8080")
