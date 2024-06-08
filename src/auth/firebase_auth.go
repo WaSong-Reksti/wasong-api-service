@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -112,7 +113,8 @@ func (fa *FirebaseAuth) LoginUser(email, password string) (*LoginResponse, error
 	// Check if request was successful
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("login request failed: %s", string(body))
-		return nil, err
+
+		return nil, errors.New(string(body))
 	}
 
 	// Decode response

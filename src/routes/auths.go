@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"encoding/json"
 	"example/wasong-api-service/src/auth"
 	"log"
 	"net/http"
@@ -40,7 +41,12 @@ func InitializeAuthRoutes(c context.Context, r *gin.Engine, firebaseAuth *auth.F
 		}
 		resp, err := firebaseAuth.LoginUser(requestData.Email, requestData.Password)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			var errorResp map[string]interface{}
+			if jsonErr := json.Unmarshal([]byte(err.Error()), &errorResp); jsonErr == nil {
+				ctx.JSON(http.StatusInternalServerError, errorResp)
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 		ctx.JSON(http.StatusOK, resp)
