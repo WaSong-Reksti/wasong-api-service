@@ -31,7 +31,7 @@ func InitializeAuthRoutes(c context.Context, r *gin.Engine, firebaseAuth *auth.F
 		ctx.JSON(http.StatusOK, gin.H{"user_id": user.UID, "user_record": userDoc})
 	})
 
-	r.GET("/api/login", func(ctx *gin.Context) {
+	r.POST("/api/login", func(ctx *gin.Context) {
 		var requestData struct {
 			Email    string `json:"email"`
 			Password string `json:"password"`
