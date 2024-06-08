@@ -13,12 +13,12 @@ User Model
 */
 type User struct {
 	ID       string `firestore:"-"`
-	Username string `firestore:"Username,omitempty"`
 	Password string `firestore:"Password,omitempty"`
 	Email    string `firestore:"Email,omitempty"`
 	Type     string `firestore:"Type,omitempty"`
 	Name     string `firestore:"Name,omitempty"`
 	About    string `firestore:"About,omitempty"`
+	UID      string `firestore:"UID,omitempty"`
 }
 
 func CreateUser(ctx context.Context, client *firestore.Client, user User) (string, *User, error) {

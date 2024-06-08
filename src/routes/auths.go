@@ -7,10 +7,11 @@ import (
 	"log"
 	"net/http"
 
+	"cloud.google.com/go/firestore"
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeAuthRoutes(c context.Context, r *gin.Engine, firebaseAuth *auth.FirebaseAuth) {
+func InitializeAuthRoutes(c context.Context, r *gin.Engine, firebaseAuth *auth.FirebaseAuth, firestoreClient *firestore.Client) {
 	r.POST("/api/register", func(ctx *gin.Context) {
 		var requestData struct {
 			Email    string `json:"email"`
@@ -21,13 +22,13 @@ func InitializeAuthRoutes(c context.Context, r *gin.Engine, firebaseAuth *auth.F
 			return
 		}
 
-		user, err := firebaseAuth.RegisterUser(requestData.Email, requestData.Password)
+		user, userDoc, err := firebaseAuth.RegisterUser(requestData.Email, requestData.Password, firestoreClient)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		ctx.JSON(http.StatusOK, gin.H{"user_id": user.UID})
+		ctx.JSON(http.StatusOK, gin.H{"user_id": user.UID, "user_record": userDoc})
 	})
 
 	r.GET("/api/login", func(ctx *gin.Context) {

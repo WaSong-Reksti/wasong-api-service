@@ -38,7 +38,7 @@ func main() {
 	routes.InitializeUserRoutes(ctx, router, firestoreClient)
 	routes.InitializeCourseRoutes(ctx, router, firestoreClient)
 	routes.InitializeAssignmentsRoutes(ctx, router, firestoreClient)
-	routes.InitializeAuthRoutes(ctx, router, firebaseAuth)
+	routes.InitializeAuthRoutes(ctx, router, firebaseAuth, firestoreClient)
 
 	router.Run("localhost:8080")
 	fmt.Println("Sucessfully run on localhost:8080")

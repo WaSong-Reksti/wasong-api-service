@@ -5,13 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"example/wasong-api-service/src/models"
 	"io"
 	"log"
 	"net/http"
 	"os"
 
+	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/joho/godotenv"
 )
@@ -62,16 +65,29 @@ func NewFirebaseAuth(ctx context.Context, app *firebase.App) (*FirebaseAuth, err
 }
 
 // RegisterUser registers a new user.
-func (fa *FirebaseAuth) RegisterUser(email, password string) (*auth.UserRecord, error) {
+func (fa *FirebaseAuth) RegisterUser(email, password string, firestoreClient *firestore.Client) (*auth.UserRecord, *models.User, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("error hashing password: %v", err)
+		return nil, nil, err
+	}
 	params := (&auth.UserToCreate{}).
 		Email(email).
 		Password(password)
 	user, err := fa.authClient.CreateUser(fa.ctx, params)
 	if err != nil {
 		log.Printf("error registering user: %v", err)
-		return nil, err
+		return nil, nil, err
 	}
-	return user, nil
+	_, userRecord, err := models.CreateUser(fa.ctx, firestoreClient, models.User{
+		Email:    user.Email,
+		UID:      user.UID,
+		Password: string(hashedPassword),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return user, userRecord, nil
 }
 
 // VerifyIDToken verifies the ID token.
