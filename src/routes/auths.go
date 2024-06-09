@@ -6,6 +6,7 @@ import (
 	"example/wasong-api-service/src/auth"
 	"log"
 	"net/http"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	"github.com/gin-gonic/gin"
@@ -51,6 +52,54 @@ func InitializeAuthRoutes(c context.Context, r *gin.Engine, firebaseAuth *auth.F
 			return
 		}
 		ctx.JSON(http.StatusOK, resp)
+	})
+
+	r.GET("/api/session", func(ctx *gin.Context) {
+		authHeader := ctx.GetHeader("Authorization")
+		if authHeader == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is missing"})
+			return
+		}
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Malformed authorization header"})
+			return
+		}
+		token, err := firebaseAuth.VerifyToken(c, tokenString)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "error verifying ID token: " + err.Error()})
+			return
+		}
+		resp := map[string]interface{}{
+			"uid":      token.UID,
+			"issuer":   token.Issuer,
+			"expires":  token.Expires,
+			"issuedAt": token.IssuedAt,
+			"authTime": token.AuthTime,
+			"firebase": token.Firebase,
+		}
+		ctx.JSON(http.StatusOK, resp)
+	})
+
+	r.POST("/api/logout", func(ctx *gin.Context) {
+		authHeader := ctx.GetHeader("Authorization")
+		if authHeader == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is missing"})
+			return
+		}
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Malformed authorization header"})
+			return
+		}
+
+		err := firebaseAuth.RevokeToken(c, tokenString)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke refresh tokens"})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 	})
 	log.Println("Auth route initialized")
 }

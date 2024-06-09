@@ -143,3 +143,32 @@ func (fa *FirebaseAuth) LoginUser(email, password string) (*LoginResponse, error
 
 	return &loginResp, nil
 }
+
+func (fa *FirebaseAuth) VerifyToken(ctx context.Context, idToken string) (*auth.Token, error) {
+	token, err := fa.authClient.VerifyIDTokenAndCheckRevoked(ctx, idToken)
+	if err != nil {
+		if err.Error() == "ID token has been revoked" {
+			// Token is revoked. Inform the user to reauthenticate or signOut() the user.
+			log.Printf("the ID Token has been revoked")
+			return nil, err
+		} else {
+			log.Printf("error: %v", err)
+		}
+		return nil, err
+	}
+	return token, err
+}
+
+func (fa *FirebaseAuth) RevokeToken(ctx context.Context, idToken string) error {
+	token, err := fa.authClient.VerifyIDToken(context.Background(), idToken)
+	if err != nil {
+		return err
+	}
+	err = fa.authClient.RevokeRefreshTokens(ctx, token.UID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
