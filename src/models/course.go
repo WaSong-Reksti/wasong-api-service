@@ -112,8 +112,55 @@ func DeleteCourseByID(ctx context.Context, firestoreClient *firestore.Client, co
 		return fmt.Errorf("failed to delete: %v", err)
 	}
 
-	return err
+	return nil
 
+}
+
+func AddStudentToCourse(ctx context.Context, firestoreClient *firestore.Client, user *User, courseRef *firestore.DocumentRef) error {
+	// Retrieve the student document
+	studentDoc, err := user.StudentRef.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get student document: %v", err)
+	}
+
+	// Get the current courses array
+	courses, err := studentDoc.DataAt("Courses")
+	if err != nil {
+		return fmt.Errorf("failed to get Courses field: %v", err)
+	}
+
+	// Type assert the courses to an array of DocumentRefs
+	// Type assert the courses to an array of interface{}
+	coursesArray, ok := courses.([]interface{})
+	if !ok {
+		return fmt.Errorf("Courses field is not of the expected type: %T", courses)
+	}
+
+	// Convert each element to *firestore.DocumentRef
+	var updatedCoursesArray []*firestore.DocumentRef
+	for _, course := range coursesArray {
+		docRef, ok := course.(*firestore.DocumentRef)
+		if !ok {
+			return fmt.Errorf("Courses field contains non-document reference elements")
+		}
+		updatedCoursesArray = append(updatedCoursesArray, docRef)
+	}
+
+	// Append the new course reference to the courses array
+	coursesArray = append(coursesArray, courseRef)
+
+	// Update the Courses field in the student document
+	_, err = user.StudentRef.Update(ctx, []firestore.Update{
+		{
+			Path:  "Courses",
+			Value: coursesArray,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update Courses field: %v", err)
+	}
+
+	return nil
 }
 
 func JoinCourseWithInstructor(ctx context.Context, firestore *firestore.Client) ([]Course, error) {

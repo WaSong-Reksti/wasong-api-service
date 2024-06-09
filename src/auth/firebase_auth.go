@@ -83,6 +83,7 @@ func (fa *FirebaseAuth) RegisterUser(email, password, name string, firestoreClie
 		Email:    user.Email,
 		Name:     name,
 		UID:      user.UID,
+		Type:     "student",
 		Password: string(hashedPassword),
 	})
 	if err != nil {

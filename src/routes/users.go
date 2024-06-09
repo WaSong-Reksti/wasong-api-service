@@ -75,5 +75,69 @@ func InitializeUserRoutes(ctx context.Context, r *gin.Engine, firestoreClient *f
 		c.JSON(http.StatusOK, user)
 	})
 
+	r.GET("/api/students/uid=:uid", func(c *gin.Context) {
+		uid := c.Param("uid")
+		user, err := models.GetUserByUID(ctx, firestoreClient, uid)
+		if err != nil {
+			fmt.Printf("Error coy: %v", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		student, err := models.GetStudents(ctx, user.StudentRef)
+		if err != nil {
+			fmt.Printf("Error coy: %v", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, student)
+	})
+
+	r.POST("api/enroll", func(c *gin.Context) {
+
+		var requestBody struct {
+			UID      string `json:"uid"`
+			CourseID string `json:"course_id"`
+		}
+		if err := c.BindJSON(&requestBody); err != nil {
+			fmt.Printf("error: " + err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse JSON body"})
+			return
+		}
+
+		uid := requestBody.UID
+		courseId := requestBody.CourseID
+
+		courseRef := firestoreClient.Collection("Course").Doc(courseId)
+		user, err := models.GetUserByUID(ctx, firestoreClient, uid)
+		if err != nil {
+			fmt.Printf("Error coy 1: %v", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		err = models.AddStudentToCourse(ctx, firestoreClient, user, courseRef)
+		if err != nil {
+			fmt.Printf("Error coy 2: %v", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		courseDoc, err := courseRef.Get(ctx)
+		if err != nil {
+			fmt.Printf("Error retrieving course: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		courseName, err := courseDoc.DataAt("Name")
+		if err != nil {
+			fmt.Printf("Error retrieving course name: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		message := fmt.Sprintf("Student %s Enrolled To Class %s", user.Name, courseName)
+		c.JSON(http.StatusOK, gin.H{"message": message})
+	})
+
 	fmt.Println("Initialize users route")
 }

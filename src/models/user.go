@@ -12,21 +12,36 @@ import (
 User Model
 */
 type User struct {
-	ID       string `firestore:"-"`
-	Password string `firestore:"Password,omitempty"`
-	Email    string `firestore:"Email,omitempty"`
-	Type     string `firestore:"Type,omitempty"`
-	Name     string `firestore:"Name,omitempty"`
-	About    string `firestore:"About,omitempty"`
-	UID      string `firestore:"UID,omitempty"`
+	ID         string                 `firestore:"-"`
+	Password   string                 `firestore:"Password,omitempty"`
+	Email      string                 `firestore:"Email,omitempty"`
+	Type       string                 `firestore:"Type,omitempty"`
+	Name       string                 `firestore:"Name,omitempty"`
+	About      string                 `firestore:"About,omitempty"`
+	UID        string                 `firestore:"UID,omitempty"`
+	StudentRef *firestore.DocumentRef `firestore:"Student,omitempty"`
+	Student    *Students              `firestore:"-"`
 }
 
 func CreateUser(ctx context.Context, client *firestore.Client, user User) (string, *User, error) {
+	if user.Type == "student" {
+		// Create a new document in the "Students" collection
+		studentDocRef, _, err := client.Collection("Students").Add(ctx, map[string]interface{}{})
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to create student document: %v", err)
+		}
+		// Assign the reference of the created student document to the StudentRef field
+		user.StudentRef = studentDocRef
+	}
+
+	// Create the user document in the "User" collection
 	docRef, _, err := client.Collection("User").Add(ctx, user)
 	if err != nil {
-		return "", nil, fmt.Errorf("error: %v", err)
+		return "", nil, fmt.Errorf("failed to create user document: %v", err)
 	}
 	createdUser := user
+	createdUser.ID = docRef.ID
+
 	return docRef.ID, &createdUser, nil
 
 }
@@ -113,6 +128,18 @@ func getUser(ctx context.Context, userRef *firestore.DocumentRef) (*User, error)
 		return &User{}, fmt.Errorf("failed to convert data to User struct: %v", err)
 	}
 
+	if user.StudentRef != nil {
+		var student Students
+		studentDoc, err := user.StudentRef.Get(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get student document: %v", err)
+		}
+		if err := studentDoc.DataTo(&student); err != nil {
+			return nil, fmt.Errorf("failed to convert student data to Students struct: %v", err)
+		}
+		user.Student = &student
+	}
+
 	// Set the ID field of the user
 	user.ID = docSnapshot.Ref.ID
 
@@ -128,9 +155,27 @@ func GetUserByUID(ctx context.Context, firestoreClient *firestore.Client, UID st
 		return nil, fmt.Errorf("failed to fetch user document: %v", err)
 	}
 
+	if err == iterator.Done {
+
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user document: %v", err)
+	}
+
 	var user User
 	if err := doc.DataTo(&user); err != nil {
 		return nil, fmt.Errorf("failed to convert data to User struct: %v", err)
+	}
+	if user.StudentRef != nil {
+		var student Students
+		studentDoc, err := user.StudentRef.Get(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get student document: %v", err)
+		}
+		if err := studentDoc.DataTo(&student); err != nil {
+			return nil, fmt.Errorf("failed to convert student data to Students struct: %v", err)
+		}
+		user.Student = &student
 	}
 
 	// Set the ID field of the user
