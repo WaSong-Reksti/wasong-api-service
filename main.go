@@ -35,9 +35,11 @@ func main() {
 		return
 	}
 	log.Println("Successfully initialize firebase auth")
+
+	// Run assignment routes in a separate goroutine
+	routes.InitializeAssignmentsRoutes(ctx, router, firestoreClient)
 	routes.InitializeUserRoutes(ctx, router, firestoreClient)
 	routes.InitializeCourseRoutes(ctx, router, firestoreClient)
-	routes.InitializeAssignmentsRoutes(ctx, router, firestoreClient)
 	routes.InitializeAuthRoutes(ctx, router, firebaseAuth, firestoreClient)
 
 	router.Run("localhost:8080")

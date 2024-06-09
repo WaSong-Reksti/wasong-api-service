@@ -6,6 +6,7 @@ import (
 	"context"
 	"example/wasong-api-service/src/models"
 	"fmt"
+	"log"
 	"net/http"
 
 	"cloud.google.com/go/firestore"
@@ -17,6 +18,7 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 	r.GET("/api/courses", func(c *gin.Context) {
 		courses, err := models.JoinCourseWithInstructor(ctx, firestoreClient)
 		if err != nil {
+			log.Printf("error: " + err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -27,6 +29,7 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 		courseID := c.Param("courseId")
 		course, err := models.GetCoursesById(ctx, firestoreClient, courseID)
 		if err != nil {
+			log.Printf("error: " + err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -41,12 +44,14 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 			InstructorID string `json:"instructor_id"`
 		}
 		if err := c.BindJSON(&requestBody); err != nil {
+			log.Printf("error: " + err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse JSON body"})
 			return
 		}
 
 		// Validate required fields
 		if requestBody.Name == "" || requestBody.Description == "" || requestBody.Instrument == "" || requestBody.InstructorID == "" {
+
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing required fields"})
 			return
 		}
@@ -62,6 +67,7 @@ func InitializeCourseRoutes(ctx context.Context, r *gin.Engine, firestoreClient 
 		// Create Course in Firestore
 		createdCourseID, createdCourse, err := models.CreateCourse(ctx, firestoreClient, &newCourse)
 		if err != nil {
+			log.Printf("error: " + err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

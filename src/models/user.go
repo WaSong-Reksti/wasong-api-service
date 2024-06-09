@@ -118,3 +118,23 @@ func getUser(ctx context.Context, userRef *firestore.DocumentRef) (*User, error)
 
 	return &user, nil
 }
+
+func GetUserByUID(ctx context.Context, firestoreClient *firestore.Client, UID string) (*User, error) {
+	iter := firestoreClient.Collection("User").Where("UID", "==", UID).Documents(ctx)
+	defer iter.Stop()
+
+	doc, err := iter.Next()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user document: %v", err)
+	}
+
+	var user User
+	if err := doc.DataTo(&user); err != nil {
+		return nil, fmt.Errorf("failed to convert data to User struct: %v", err)
+	}
+
+	// Set the ID field of the user
+	user.ID = doc.Ref.ID
+
+	return &user, nil
+}

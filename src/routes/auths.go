@@ -17,13 +17,14 @@ func InitializeAuthRoutes(c context.Context, r *gin.Engine, firebaseAuth *auth.F
 		var requestData struct {
 			Email    string `json:"email"`
 			Password string `json:"password"`
+			Name     string `json:name`
 		}
 		if err := ctx.BindJSON(&requestData); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
 
-		user, userDoc, err := firebaseAuth.RegisterUser(requestData.Email, requestData.Password, firestoreClient)
+		user, userDoc, err := firebaseAuth.RegisterUser(requestData.Email, requestData.Password, requestData.Name, firestoreClient)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

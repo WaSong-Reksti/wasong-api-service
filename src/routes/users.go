@@ -63,5 +63,17 @@ func InitializeUserRoutes(ctx context.Context, r *gin.Engine, firestoreClient *f
 		c.JSON(http.StatusOK, "User "+userID+" deleted successfully")
 	})
 
+	r.GET("/api/users/uid=:uid", func(c *gin.Context) {
+		uid := c.Param("uid")
+
+		user, err := models.GetUserByUID(ctx, firestoreClient, uid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, user)
+	})
+
 	fmt.Println("Initialize users route")
 }

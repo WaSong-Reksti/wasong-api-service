@@ -65,7 +65,7 @@ func NewFirebaseAuth(ctx context.Context, app *firebase.App) (*FirebaseAuth, err
 }
 
 // RegisterUser registers a new user.
-func (fa *FirebaseAuth) RegisterUser(email, password string, firestoreClient *firestore.Client) (*auth.UserRecord, *models.User, error) {
+func (fa *FirebaseAuth) RegisterUser(email, password, name string, firestoreClient *firestore.Client) (*auth.UserRecord, *models.User, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Printf("error hashing password: %v", err)
@@ -81,6 +81,7 @@ func (fa *FirebaseAuth) RegisterUser(email, password string, firestoreClient *fi
 	}
 	_, userRecord, err := models.CreateUser(fa.ctx, firestoreClient, models.User{
 		Email:    user.Email,
+		Name:     name,
 		UID:      user.UID,
 		Password: string(hashedPassword),
 	})
